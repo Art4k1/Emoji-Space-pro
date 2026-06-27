@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Space pro</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-sidebar: #1a1a1e;
+            --bg-card: #26262b;
+            --accent: #50fa7b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Ліва панель - Емодзі (ТЕПЕР ВЕЛИКА - 70%) */
+        .emoji-sidebar {
+            flex: 7; 
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .search-box {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .emoji-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 25px 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
+        }
+
+        /* СІТКА З ВЕЛИКИМИ СМАЙЛАМИ */
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+            gap: 12px;
+        }
+
+        .emoji-btn {
+            background: var(--bg-card);
+            border: 1px solid transparent;
+            font-size: 36px; /* Збільшено розмір смайлів */
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-btn:hover {
+            background: var(--border);
+            transform: scale(1.18);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .emoji-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Права частина - Блокнот (ТЕПЕР МЕНША - 30%) */
+        .notepad-container {
+            flex: 3;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100%;
+            background-color: var(--bg-main);
+        }
+
+        .notepad-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .notepad-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            border-color: var(--text-muted);
+            background: var(--border);
+        }
+
+        .action-btn.primary {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            font-weight: 600;
+        }
+
+        .action-btn.primary:hover {
+            background: #40c963;
+        }
+
+        .textarea-wrapper {
+            flex: 1;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-main);
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+        }
+
+        /* Сповіщення */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--accent);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="emoji-sidebar">
+        <div class="search-box">
+            <input type="text" id="emojiSearch" placeholder="Пошук смайликів...">
+        </div>
+        <div class="emoji-container" id="emojiContainer">
+            <div id="frequentSection" style="display: none;">
+                <div class="section-title">⭐ Часто використовувані (Клік - копіювати)</div>
+                <div class="emoji-grid" id="frequentGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notepad-container">
+        <div class="notepad-header">
+            <div class="notepad-title">📝 Блокнот</div>
+            <div class="btn-group">
+                <button class="action-btn" onclick="clearNotepad()">Очистити</button>
+                <button class="action-btn primary" onclick="copyAllText()">Копіювати (Ctrl+C)</button>
+            </div>
+        </div>
+        <div class="textarea-wrapper">
+            <textarea id="notepad" placeholder="Текст..."></textarea>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Скопійовано! 👍</div>
+
+    <script>
+        const emojiData = [
+            { category: "Емоції", emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😋", "😛", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😴", "🤤", "😵", "🤐", "🥴", "🤢", "🤮", "😷"] },
+            { category: "Жести та Люди", emojis: ["👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪", "🧠", "👀", "👅", "👄", "💋", "❤️", "💔"] },
+            { category: "Серця, Вогонь та Ефекти", emojis: ["🔥", "✨", "💥", "💯", "🎉", "⚡", "🌟", "⭐", "🔮", "💘", "💝", "💖", "💗", "💓", "💞", "💕", "💟", "❣️", "🧡", "💛", "💚", "💙", "💜", "🤎", "🖤", "🤍", "💤", "💨", "💦", "🚀", "🛸", "👑"] },
+            { category: "Тварини та Природа", emojis: ["🐱", "🐈", "🐶", "🐕", "🐺", "🦊", "🦝", "🦁", "🐯", "🐆", "🐴", "🦄", "🦓", "🦌", "🐷", "🐵", "🐒", "🦍", "🦅", "🦉", "🦆", "🐦", "🐧", "🐊", "🐢", "🦎", "🐍", "🐉", "🐳", "🐬", "🐟", "🦈", "🦋", "🕷️", "💮", "🌵", "🌲", "🌳", "🌴", "🌱", "🌿", "🍀", "🍁", "🍄"] },
+            { category: "Авто, Техніка та Інструменти", emojis: ["🚗", "🚙", "🏎️", "🚓", "🏍️", "🚲", "🚨", "⛽", "🚥", "🚦", "🛑", "🛠️", "🔧", "🔨", "🪛", "⚙️", "🔒", "🔓", "🔑", "🗝️", "💻", "🖥️", "📱", "🎮", "🕹️", "🎧", "🎤", "📷", "💡", "🔦", "🔋", "🔌", "💵", "📦", "📌", "✏️", "📝"] }
+        ];
+
+        const notepad = document.getElementById('notepad');
+        const frequentGrid = document.getElementById('frequentGrid');
+        const frequentSection = document.getElementById('frequentSection');
+        const emojiContainer = document.getElementById('emojiContainer');
+        const searchInput = document.getElementById('emojiSearch');
+
+        let emojiStats = JSON.parse(localStorage.getItem('emojiStats_v2')) || {};
+        notepad.value = localStorage.getItem('savedNotes_v2') || '';
+        
+        notepad.addEventListener('input', () => {
+            localStorage.setItem('savedNotes_v2', notepad.value);
+        });
+
+        function renderEmojis(filter = "") {
+            const categories = emojiContainer.querySelectorAll('.dynamic-category');
+            categories.forEach(el => el.remove());
+
+            emojiData.forEach(cat => {
+                if (filter && !cat.category.toLowerCase().includes(filter.toLowerCase())) return;
+
+                const catWrapper = document.createElement('div');
+                catWrapper.className = 'dynamic-category';
+
+                const title = document.createElement('div');
+                title.className = 'section-title';
+                title.innerText = cat.category;
+                catWrapper.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'emoji-grid';
+
+                cat.emojis.forEach(emoji => {
+                    const btn = document.createElement('button');
+                    btn.className = 'emoji-btn';
+                    btn.innerText = emoji;
+                    btn.onclick = () => handleEmojiClick(emoji);
+                    grid.appendChild(btn);
+                });
+
+                catWrapper.appendChild(grid);
+                emojiContainer.appendChild(catWrapper);
+            });
+        }
+
+        function handleEmojiClick(emoji) {
+            const start = notepad.selectionStart;
+            const end = notepad.selectionEnd;
+            const text = notepad.value;
+            notepad.value = text.substring(0, start) + emoji + text.substring(end);
+            notepad.focus();
+            notepad.selectionStart = notepad.selectionEnd = start + emoji.length;
+            
+            localStorage.setItem('savedNotes_v2', notepad.value);
+
+            navigator.clipboard.writeText(emoji).then(() => {
+                showToast(`Скопійовано: ${emoji}`);
+            });
+
+            emojiStats[emoji] = (emojiStats[emoji] || 0) + 1;
+            localStorage.setItem('emojiStats_v2', JSON.stringify(emojiStats));
+            updateFrequentSection();
+        }
+
+        function updateFrequentSection() {
+            frequentGrid.innerHTML = '';
+            const sorted = Object.entries(emojiStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 16); // Більше частіших смайлів у рядку
+
+            if (sorted.length > 0) {
+                frequentSection.style.display = 'block';
+                sorted.forEach(([emoji]) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'emoji-btn';
+                    btn.innerText = emoji;
+                    btn.onclick = () => handleEmojiClick(emoji);
+                    frequentGrid.appendChild(btn);
+                });
+            } else {
+                frequentSection.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            renderEmojis(e.target.value);
+        });
+
+        function copyAllText() {
+            if (!notepad.value) {
+                showToast("Блокнот порожній! 🚫");
+                return;
+            }
+            navigator.clipboard.writeText(notepad.value).then(() => {
+                showToast("Текст скопійовано! 📋");
+            });
+        }
+
+        function clearNotepad() {
+            if(confirm("Очистити весь текст?")) {
+                notepad.value = '';
+                localStorage.setItem('savedNotes_v2', '');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 1500);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                if (document.activeElement === notepad && notepad.selectionStart === notepad.selectionEnd) {
+                    e.preventDefault();
+                    copyAllText();
+                }
+            }
+        });
+
+        updateFrequentSection();
+        renderEmojis();
+    </script>
+</body>
+</html>
